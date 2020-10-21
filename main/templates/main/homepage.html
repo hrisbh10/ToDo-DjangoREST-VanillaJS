@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>ToDo - On DJANGO REST</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+	<style>
+		.container{
+			margin-top: 20px;
+		}
+	</style>
+
+</head>
+<body>
+	<div class="container">
+		<div class="input-group mb-3 sticky-top">
+  		<input type="text" class="form-control" placeholder="Create Task ToDo" aria-label="NewTask" aria-describedby="button-addon2">
+  		<div class="input-group-append">
+    		<button class="btn btn-dark" id="button-addon2" onclick="createTask()">Add</button>
+  		</div>
+		</div>
+		<div class="card">
+		  <ul class="list-group list-group-flush" id="todolist">
+		    <li class="list-group-item d-flex justify-content-between align-items-center">Cras justo odio
+		    	<span align="right">
+			    	<button class="btn btn-outline-secondary" type="button">Edit</button>
+			    </span>
+		    </li>
+		  </ul>
+		</div>
+	</div>
+
+
+
+
+
+	<script type="text/javascript">
+		var activeTask = null
+		buildList = function(){
+			const url = "{% url 'api:task-list' %}"
+			var list = document.getElementById('todolist')
+
+			list.innerHTML = ""
+
+			fetch(url)
+				.then((response) => response.json())
+				.then((data) => {
+					for(let task of data){
+						var list_item = `
+						<li class="list-group-item d-flex justify-content-between align-items-center">
+							<span id="${task.id}">${task.todo}</span>
+							<span align="right">
+								<button class="btn btn-outline-secondary" value="${task.id}" onclick="editTask(this.value)">Edit</button>
+								<button class="btn btn-outline-secondary" value="${task.id}" onclick="delTask(this.value)">Delete</button>
+							</span>
+						</li>`
+						list.innerHTML += list_item
+					}
+				})
+
+		}
+		window.addEventListener("load",buildList())
+
+		function createTask(){
+			var url = '{% url "api:task-create" %}'
+			var text = document.querySelector('[aria-label="NewTask"]')
+			var obj = {todo: text.value}
+			if(activeTask != null){
+				url = `/api/task-update/${activeTask}/`
+			}
+			console.log(url)
+			var json = JSON.stringify(obj)
+
+			fetch(url,{
+						method: 'POST',
+						headers: {
+					    'Content-Type': 'application/json',
+					  },
+					  body: json,
+			})
+			.then((response)=> {console.log(response.json())})
+			.then(()=>buildList())
+
+			activeTask = null
+			text.value = ""
+		}
+
+		function editTask(id){
+			var textBox = document.querySelector('[aria-label="NewTask"]')
+			var edit = document.getElementById(id)
+			activeTask = id
+			textBox.value = edit.innerHTML
+		}
+		function delTask(id){
+			const url = `/api/task-delete/${id}/`
+
+			fetch(url,{
+				method: 'DELETE',
+				headers: { 
+                'Content-type': 'application/json'
+            },
+			})
+			.then(()=>buildList())
+		}
+
+	</script>
+
+</body>
+</html>
